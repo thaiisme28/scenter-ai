@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SCenter AI</title>
+  <!-- Script Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <style>
+:root {
+  --bg: #0d0d0d;
+  --chat-bg: #0d0d0d;
+  --user-msg-bg: rgba(255, 255, 255, 0.15);
+  --user-msg: #ffffff;
+  --bot-msg-bg: rgba(35, 35, 35, 0.7);
+  --primary: #ffffff;
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --border-color: rgba(255,255,255,0.1);
+  --scrollbar-bg: rgba(255,255,255,0.05);
+  --scrollbar-thumb: rgba(255,255,255,0.2);
+  --input-bg: #212121;
+  --input-text: #ffffff;
+  --input-focus-bg: #2a2a2a;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --voice-recording: rgba(239, 68, 68, 0.6);
+  --send-blue: #3b82f6;
+  --send-blue-hover: #2563eb;
+  --stop-red: #ef4444;
+  --stop-red-hover: #dc2626;
+  
+  --settings-bg: #0d0d0d;
+  --settings-group-bg: #1c1c1e;
+  --settings-text-sub: #8e8e93;
+  --settings-red: #ff453a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-smooth: antialiased;
+  -webkit-font-smoothing: antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* --- TOP NAVIGATION --- */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(13, 13, 13, 0.8);
+  backdrop-filter: blur(10px);
+}
+.top-nav-left, .top-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.top-nav-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.top-nav-icon:hover { opacity: 1; }
+
+/* --- SIDEBAR LỊCH SỬ --- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: #000000;
+  z-index: 2000;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar.show { transform: translateX(0); }
+.sidebar-header {
+  padding: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.history-item {
+  padding: 12px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-item:hover { background: rgba(255, 255, 255, 0.08); }
+.history-item.active { background: rgba(255, 255, 255, 0.12); }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #000000;
+}
+.sidebar-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+.sidebar-settings-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.sidebar-settings-btn:hover { background: rgba(255, 255, 255, 0.1); }
+.sidebar-settings-btn svg {
+  width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1999;
+  display: none;
+  backdrop-filter: blur(2px);
+}
+.sidebar-backdrop.show { display: block; }
+
+/* --- SETTINGS MODAL --- */
+.settings-modal {
+  position: fixed;
+  inset: 0;
+  background: var(--settings-bg);
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+  overflow: hidden;
+}
+.settings-modal.show { transform: translateY(0); }
+.settings-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  position: relative;
+  background: var(--settings-bg);
+}
+.settings-back-btn {
+  width: 36px; height: 36px; border-radius: 50%; background: #2c2c2e; border: none;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; position: absolute; left: 20px;
+}
+.settings-back-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.settings-title { flex: 1; text-align: center; font-size: 18px; font-weight: 600; color: #fff; }
+.settings-content { flex: 1; overflow-y: auto; padding: 0 20px 40px; }
+.settings-content::-webkit-scrollbar { width: 4px; }
+.settings-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+.settings-section { margin-bottom: 24px; }
+.settings-section-title { font-size: 13px; color: var(--settings-text-sub); margin-bottom: 8px; padding-left: 4px; text-transform: capitalize; }
+.settings-group { background: var(--settings-group-bg); border-radius: 16px; overflow: hidden; }
+.settings-item { display: flex; align-items: center; padding: 16px; cursor: pointer; position: relative; text-decoration: none; color: inherit; }
+.settings-item:not(:last-child)::after { content: ''; position: absolute; bottom: 0; left: 48px; right: 0; height: 1px; background: rgba(255, 255, 255, 0.08); }
+.settings-item:hover { background: rgba(255, 255, 255, 0.05); }
+.settings-icon { width: 24px; height: 24px; margin-right: 16px; display: flex; align-items: center; justify-content: center; }
+.settings-icon svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.settings-text { flex: 1; font-size: 16px; color: #fff; }
+.settings-value { font-size: 14px; color: var(--settings-text-sub); margin-right: 8px; }
+.settings-arrow svg { width: 16px; height: 16px; fill: none; stroke: var(--settings-text-sub); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.settings-btn-danger { width: 100%; padding: 16px; text-align: left; font-size: 16px; color: var(--settings-red); background: transparent; border: none; cursor: pointer; font-weight: 500; }
+.settings-btn-danger:hover { background: rgba(255, 69, 58, 0.1); }
+.settings-footer-text { text-align: center; font-size: 12px; color: var(--settings-text-sub); margin-top: 20px; padding-bottom: 20px; }
+
+.settings-view { display: none; flex: 1; flex-direction: column; }
+.settings-view.active { display: flex; }
+
+.toggle-switch { position: relative; width: 50px; height: 30px; background: rgba(255, 255, 255, 0.2); border-radius: 15px; cursor: pointer; transition: background 0.3s; flex-shrink: 0; }
+.toggle-switch.active { background: #34c759; }
+.toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 26px; height: 26px; background: #fff; border-radius: 50%; transition: transform 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.toggle-switch.active::after { transform: translateX(20px); }
+
+/* --- CHAT CONTAINER --- */
+.chat-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 80px 20px 140px;
+  background: var(--bg);
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease;
+}
+.chat-container::-webkit-scrollbar { width: 6px; }
+.chat-container::-webkit-scrollbar-track { background: transparent; }
+.chat-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 8px; }
+
+/* CHẾ ĐỘ CHỈNH SỬA */
+.chat-container.edit-mode .message {
+  opacity: 0.15;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.chat-container.edit-mode .message.editing {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- MESSAGES --- */
+.message {
+  display: flex;
+  margin-bottom: 20px;
+  max-width: 85%;
+  line-height: 1.5;
+  flex-direction: column;
+}
+.message.bot { justify-content: flex-start; align-items: flex-start; }
+.message.user { justify-content: flex-end; align-self: flex-end; align-items: flex-end; }
+
+.message-content {
+  padding: 12px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  white-space: pre-line;
+  max-width: 100%;
+  word-wrap: break-word;
+  user-select: text;
+  overflow-x: auto;
+}
+.message.bot .message-content {
+  background: var(--bot-msg-bg);
+  color: var(--text-primary);
+  border-top-left-radius: 4px;
+}
+.message.user .message-content {
+  background: var(--user-msg-bg);
+  color: var(--user-msg);
+  border-top-right-radius: 4px;
+}
+
+/* --- THINKING INDICATOR --- */
+.thinking-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.thinking-block svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+/* --- TABLE STYLING --- */
+.message-content .table-container { overflow-x: auto; margin: 12px 0; border-radius: 8px; border: 1px solid var(--border-color); max-width: 100%; }
+.message-content table { width: 100%; border-collapse: collapse; font-size: 14px; white-space: nowrap; }
+.message-content th, .message-content td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); border-right: 1px solid var(--border-color); }
+.message-content th:last-child, .message-content td:last-child { border-right: none; }
+.message-content th { background: rgba(255,255,255,0.08); font-weight: 600; color: #fff; }
+.message-content tr:last-child td { border-bottom: none; }
+
+/* --- WELCOME SCREEN --- */
+.welcome-container {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin: auto; padding: 20px; animation: fadeInWelcome 0.8s ease-out; user-select: none;
+}
+.welcome-logo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; }
+.welcome-title { font-size: 20px; font-weight: 600; color: var(--text-primary); }
+@keyframes fadeInWelcome { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- ACTION BAR --- */
+.bot-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  color: #8b8f98;
+  font-size: 13px;
+}
+.user-action-bar {
+  justify-content: flex-end;
+  gap: 8px;
+}
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.action-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.action-btn:hover { color: #fff; }
+.action-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.action-btn.active { color: #60a5fa; }
+.action-btn.active svg { fill: rgba(96, 165, 250, 0.2); }
+
+/* --- CUSTOM CONTEXT MENU --- */
+.custom-context-menu {
+  position: fixed;
+  background: #2a2a2a;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  min-width: 180px;
+}
+.custom-context-menu.show { display: flex; }
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.context-menu-item:hover { background: rgba(255,255,255,0.1); }
+.context-menu-item svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- INPUT AREA --- */
+.input-wrapper {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 800px; z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* CSS cho Turnstile */
+.turnstile-container {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.input-area {
+  width: 100%;
+  background: var(--input-bg); border-radius: 28px; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* --- EDIT MODE HEADER --- */
+.edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+}
+.edit-header.hidden { display: none; }
+.close-edit-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  padding: 0;
+  transition: background 0.2s;
+}
+.close-edit-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.close-edit-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+.input-top { display: flex; align-items: center; }
+textarea {
+  flex: 1; resize: none; border: none; padding: 4px 8px; font-size: 16px; font-family: inherit; background: transparent; color: var(--input-text); outline: none; min-height: 24px; max-height: 120px; line-height: 1.4;
+}
+textarea::placeholder { color: #888; }
+
+.input-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.input-actions-left { display: flex; gap: 8px; }
+
+.pill-btn {
+  background: transparent; color: #9ca3af; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 6px 14px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;
+}
+.pill-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; border-color: rgba(255, 255, 255, 0.3); }
+.pill-btn.active { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.5); color: #60a5fa; }
+.pill-btn.active:hover { background: rgba(59, 130, 246, 0.25); border-color: rgba(59, 130, 246, 0.7); }
+.pill-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.input-actions-right { display: flex; align-items: center; gap: 12px; }
+.icon-btn { background: transparent; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: background 0.2s; padding: 0; }
+.icon-btn:hover { background: rgba(255, 255, 255, 0.1); }
+.icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+#send-btn { background: var(--send-blue); color: white; width: 34px; height: 34px; display: none; }
+#send-btn:hover { background: var(--send-blue-hover); }
+#send-btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
+
+#voice-btn { display: flex; }
+#voice-btn.recording { color: var(--error); background: rgba(239, 68, 68, 0.2); animation: pulse-voice 1.5s infinite; }
+@keyframes pulse-voice { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+#stop-btn { background: var(--stop-red); color: white; width: 34px; height: 34px; display: none; }
+#stop-btn.show { display: flex; }
+
+/* --- ATTACHMENTS --- */
+.pending-attachment {
+  display: none; align-items: center; gap: 10px; position: absolute; left: 0; right: 0; bottom: calc(100% + 10px); padding: 8px 12px; border-radius: 16px; background: rgba(35,35,35,.96); border: 1px solid rgba(255,255,255,.10); box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+.pending-attachment.show { display: flex; }
+.pending-attachment-preview { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #111; }
+.pending-attachment-icon { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; background: rgba(255,255,255,.08); color: #fff; }
+.pending-attachment-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+.pending-attachment-info { min-width: 0; flex: 1; }
+.pending-attachment-name { color: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pending-attachment-hint { color: #9ca3af; font-size: 11px; }
+.pending-attachment-remove { width: 28px; height: 28px; border-radius: 50%; background: transparent; border: none; color: #a1a1aa; cursor: pointer; display: grid; place-items: center; }
+.pending-attachment-remove svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+/* --- TYPING INDICATOR --- */
+.typing-indicator { display: inline-flex; align-items: center; background: var(--bot-msg-bg); padding: 12px 18px; border-radius: 20px; border-top-left-radius: 4px; font-size: 14px; color: var(--text-secondary); }
+.typing-dot { width: 5px; height: 5px; background: var(--text-secondary); border-radius: 50%; margin-left: 4px; animation: typingAnimation 1.4s infinite ease-in-out; }
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingAnimation { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+
+/* --- HIDDEN ELEMENTS --- */
+.hidden { display: none !important; }
+
+/* Image Preview Modal */
+#image-preview-modal { position: fixed; inset: 0; z-index: 99999; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,.85); backdrop-filter: blur(8px); }
+#image-preview-modal.show { display: flex; }
+#image-preview-modal img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 12px; }
+#image-preview-modal .close-preview { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(35,35,38,.9); color: #fff; font-size: 24px; cursor: pointer; }
+.pending-attachment-preview { cursor: zoom-in; }
+
+/* Chat Menu (for Upload) */
+.chat-menu { position: absolute; bottom: 100%; right: 0; margin-bottom: 10px; background: #2a2a2a; border-radius: 16px; padding: 8px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); z-index: 2000; }
+.chat-menu button { background: transparent; border: none; color: white; padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; text-align: left; }
+.chat-menu button:hover { background: rgba(255,255,255,0.1); }
+.chat-menu button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+.image-preview { max-width: 300px; max-height: 300px; border-radius: 12px; margin-top: 8px; border: 1px solid var(--border-color); }
+
+/* Ẩn thanh action mặc định, chỉ hiện khi hover vào tin nhắn trên PC */
+@media (min-width: 769px) {
+  .bot-action-bar { opacity: 0; transition: opacity 0.2s; }
+  .message:hover .bot-action-bar { opacity: 1; }
+}
+  </style>
+</head>
+<body>
+
+  <!-- CONTEXT MENU -->
+  <div class="custom-context-menu" id="custom-context-menu">
+    <div class="context-menu-item" id="ctx-copy">
+      <svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg>
+      Sao chép
+    </div>
+    <div class="context-menu-item" id="ctx-select">
+      <svg viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+      Chọn văn bản
+    </div>
+    <div class="context-menu-item" id="ctx-edit">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Chỉnh sửa
+    </div>
+    <div class="context-menu-item" id="ctx-share">
+      <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+      Chia sẻ
+    </div>
+  </div>
+
+  <!-- SIDEBAR LỊCH SỬ -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">Lịch sử trò chuyện</div>
+    <div class="history-list" id="history-list"></div>
+    <div class="sidebar-footer">
+      <div class="sidebar-brand">SCenter AI</div>
+      <button class="sidebar-settings-btn" onclick="openSettings()">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="settings-modal" id="settings-modal">
+    <div class="settings-view active" id="settings-main-view">
+      <div class="settings-header">
+        <button class="settings-back-btn" onclick="closeSettings()"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="settings-title">Cài đặt</div>
+      </div>
+      <div class="settings-content">
+        <div class="settings-section">
+          <div class="settings-section-title">Dữ liệu & Quyền riêng tư</div>
+          <div class="settings-group">
+            <div class="settings-item" onclick="openDataControl()">
+              <div class="settings-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+              <div class="settings-text">Kiểm soát dữ liệu</div>
+              <div class="settings-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Ứng dụng</div>
+          <div class="settings-group">
+            <div class="settings-item">
+              <div class="settings-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+              <div class="settings-text">Ngôn ngữ</div><div class="settings-value">Tiếng Việt</div>
+              <div class="settings-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Về</div>
+          <div class="settings-group">
+            <div class="settings-item" onclick="alert('Bạn đang sử dụng phiên bản mới nhất: 7.14.11 (SCFL)')">
+              <div class="settings-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
+              <div class="settings-text">Kiểm tra cập nhật</div><div class="settings-value">7.14.11 (SCFL)</div>
+              <div class="settings-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+            <a class="settings-item" href="https://sites.google.com/view/scenterseries/dieu-khoan-va-dich-vu" target="_blank">
+              <div class="settings-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+              <div class="settings-text">Thỏa thuận dịch vụ</div>
+              <div class="settings-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </a>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-group">
+            <a class="settings-item" href="mailto:scenter.ltd@gmail.com">
+              <div class="settings-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></div>
+              <div class="settings-text">Trợ giúp & Phản hồi</div>
+              <div class="settings-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </a>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-group"><button class="settings-btn-danger" onclick="logoutApp()">Đăng xuất</button></div>
+        </div>
+        <div class="settings-footer-text">Được tạo bởi AI, chỉ mang tính tham khảo. Sử dụng hợp pháp.</div>
+      </div>
+    </div>
+
+    <div class="settings-view" id="settings-data-view">
+      <div class="settings-header">
+        <button class="settings-back-btn" onclick="closeDataControl()"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="settings-title">Kiểm soát dữ liệu</div>
+      </div>
+      <div class="settings-content">
+        <div class="settings-section">
+          <div class="settings-group" style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="settings-text" style="font-weight: 500;">Cải thiện mô hình cho mọi người</div>
+              <div class="toggle-switch active" id="toggle-improve" onclick="toggleImproveModel()"></div>
+            </div>
+            <div style="font-size: 13px; color: var(--settings-text-sub); line-height: 1.5;">
+              Cho phép sử dụng nội dung của bạn để huấn luyện các mô hình và cải thiện dịch vụ của chúng tôi. Chúng tôi thực hiện các bước để bảo vệ quyền riêng tư của bạn.
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-group">
+            <div class="settings-item" onclick="exportData()">
+              <div class="settings-icon"></div><div class="settings-text">Xuất dữ liệu</div>
+              <div class="settings-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-group"><button class="settings-btn-danger" onclick="deleteAllChats()">Xóa tất cả cuộc trò chuyện</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP NAVIGATION -->
+  <div class="top-nav">
+    <div class="top-nav-left">
+      <svg class="top-nav-icon" onclick="toggleSidebar(true)" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <span style="font-weight: 600; font-size: 16px; margin-left: 4px;">SCenter AI</span>
+    </div>
+    <div class="top-nav-right">
+      <svg class="top-nav-icon" onclick="startNewChat()" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+    </div>
+  </div>
+
+  <div class="chat-container" id="chat"></div>
+
+  <div class="input-wrapper">
+    <!-- KHUNG XÁC MINH TURNSTILE (DÙNG TEST KEY) -->
+    <div class="turnstile-container">
+      <div class="cf-turnstile" 
+           data-sitekey="1x00000000000000000000AA" 
+           data-callback="onTurnstileSuccess"
+           data-theme="dark">
+      </div>
+    </div>
+
+    <div class="pending-attachment" id="pending-attachment" aria-live="polite">
+      <div class="pending-attachment-icon" id="pending-attachment-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Z"/><path d="m3 16 5-5 4 4 2-2 7 7"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+      </div>
+      <img class="pending-attachment-preview" id="pending-attachment-preview" alt="Xem trước" style="display:none">
+      <div class="pending-attachment-info">
+        <div class="pending-attachment-name" id="pending-attachment-name"></div>
+        <div class="pending-attachment-hint">Đính kèm vào tin nhắn</div>
+      </div>
+      <button type="button" class="pending-attachment-remove" id="pending-attachment-remove" title="Bỏ tệp"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </div>
+
+    <div class="input-area">
+      <!-- Edit Mode Header -->
+      <div class="edit-header hidden" id="edit-header">
+        <span>Chỉnh sửa tin nhắn</span>
+        <button class="close-edit-btn" onclick="cancelEdit()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      
+      <div class="input-top">
+        <textarea id="input" rows="1" placeholder="Nhấn tin hoặc giữ để nói" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); sendMessage();}"></textarea>
+      </div>
+      <div class="input-bottom">
+        <div class="input-actions-left">
+          <button class="pill-btn" id="think-btn" type="button" onclick="toggleThinkMode()">
+            <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Suy nghĩ
+          </button>
+          <button class="pill-btn" id="search-btn" type="button" onclick="toggleSearchMode()">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Tìm kiếm
+          </button>
+        </div>
+        <div class="input-actions-right">
+          <div style="position: relative;">
+            <button class="icon-btn" id="upload-btn" onclick="toggleChatMenu()" title="Thêm"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></button>
+            <div class="chat-menu hidden" id="chat-menu">
+              <button onclick="menuAction('image')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4.5 17 4.2-4.2 3.2 3.1 2.2-2.2 5.4 5.3"/></svg> Ảnh</button>
+              <button onclick="menuAction('camera')"><svg viewBox="0 0 24 24"><path d="M8 6.5 9.4 4h5.2L16 6.5H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h3Z"/><circle cx="12" cy="13" r="4"/></svg> Camera</button>
+              <button onclick="menuAction('file')"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 13h8M8 17h6"/></svg> Tệp</button>
+            </div>
+          </div>
+          <button class="icon-btn" id="voice-btn" title="Nhập bằng giọng nói"><svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg></button>
+          <button class="icon-btn" id="send-btn" onclick="sendMessage()" title="Gửi"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+          <button class="icon-btn" id="stop-btn" onclick="stopGeneration()" title="Dừng trả lời"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="image-upload" accept="image/*" class="hidden">
+  <input type="file" id="file-upload" class="hidden">
+
+  <div id="image-preview-modal" aria-hidden="true">
+    <button class="close-preview" type="button" aria-label="Đóng">×</button>
+    <img id="image-preview-large" alt="Xem ảnh"/>
+  </div>
+
+<script>
+  // ============================================================
+  // --- CẤU HÌNH WORKER (ĐÃ SỬA LẠI ĐÚNG ĐƯỜNG DẪN) ---
+  // ============================================================
+  const OPENROUTER_API_URL = "https://scenter-proxy.scenter-ai-proxy.workers.dev";
+  const OPENROUTER_MODEL = "openai/gpt-4o";
+  const MAX_CONTEXT_MESSAGES = 6;
+
+  // --- CẤU HÌNH TURNSTILE ---
+  let turnstileToken = null;
+  function onTurnstileSuccess(token) {
+    turnstileToken = token;
+  }
+
+  // ============================================================
+  // --- GIỚI HẠN SỐ TIN NHẮN / NGÀY ---
+  // ============================================================
+  const DAILY_LIMIT = 40;
+  const USAGE_KEY = 'scenter_usage';
+
+  // --- BIẾN ---
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('input');
+  const voiceBtn = document.getElementById('voice-btn');
+  const sendBtn = document.getElementById('send-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  const imageUpload = document.getElementById('image-upload');
+  const fileUpload = document.getElementById('file-upload');
+  const ctxMenu = document.getElementById('custom-context-menu');
+  
+  let currentImage = null;
+  let currentFile = null;
+  let currentAttachment = null;
+  let conversationContext = [];
+  let recognition = null;
+  let isRecording = false;
+  let isSending = false;
+  let currentAbortController = null;
+  let stopRequested = false;
+
+  let isThinkMode = false;
+  let isSearchMode = false;
+  let editingMessageId = null;
+
+  let chatHistory = JSON.parse(localStorage.getItem('scenter_chat_history')) || [];
+  let currentSessionId = Date.now().toString();
+  let currentMessages = [];
+
+  // ============================================================
+  // --- HÀM KIỂM TRA & HIỂN THỊ GIỚI HẠN ---
+  // ============================================================
+  function checkDailyLimit() {
+    const today = new Date().toDateString();
+    let usageData;
+    try {
+      usageData = JSON.parse(localStorage.getItem(USAGE_KEY) || '{"date":"","count":0}');
+    } catch (_) {
+      usageData = { date: "", count: 0 };
+    }
+    if (usageData.date !== today) {
+      usageData.date = today;
+      usageData.count = 0;
+    }
+    if (usageData.count >= DAILY_LIMIT) {
+      showLimitMessage(usageData.count);
+      return false;
+    }
+    usageData.count++;
+    localStorage.setItem(USAGE_KEY, JSON.stringify(usageData));
+    return true;
+  }
+
+  function showLimitMessage(usedCount) {
+    const inEditMode = chat.classList.contains('edit-mode');
+    const el = document.createElement('div');
+    el.className = 'message bot' + (inEditMode ? ' editing' : '');
+    el.innerHTML = '<div class="message-content"><p style="margin:0;">Bạn đã sử dụng hết <strong>' + usedCount + '/' + DAILY_LIMIT + '</strong> tin nhắn miễn phí hôm nay. Hãy quay lại vào ngày mai nhé. 🌙</p></div>';
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // --- QUẢN LÝ LỊCH SỬ ---
+  function saveCurrentChat() {
+    if (currentMessages.length === 0) return;
+    const firstUserMsg = currentMessages.find(m => m.sender === 'user');
+    let title = firstUserMsg ? firstUserMsg.text : "Cuộc trò chuyện mới";
+    if (title.length > 30) title = title.substring(0, 30) + "...";
+
+    const existingIndex = chatHistory.findIndex(c => c.id === currentSessionId);
+    const sessionData = { id: currentSessionId, title, messages: currentMessages };
+    
+    if (existingIndex > -1) chatHistory[existingIndex] = sessionData;
+    else chatHistory.unshift(sessionData);
+    
+    localStorage.setItem('scenter_chat_history', JSON.stringify(chatHistory));
+    renderHistoryList();
+  }
+
+  function renderHistoryList() {
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    if (chatHistory.length === 0) {
+      list.innerHTML = '<div style="padding: 20px; text-align: center; color: #888; font-size: 13px;">Chưa có lịch sử trò chuyện</div>';
+      return;
+    }
+    chatHistory.forEach(session => {
+      const item = document.createElement('div');
+      item.className = 'history-item' + (session.id === currentSessionId ? ' active' : '');
+      item.innerHTML = `<span>${escapeHtml(session.title)}</span>`;
+      item.onclick = () => loadChatSession(session.id);
+      list.appendChild(item);
+    });
+  }
+
+  function loadChatSession(id) {
+    saveCurrentChat();
+    const session = chatHistory.find(c => c.id === id);
+    if (!session) return;
+    currentSessionId = session.id;
+    currentMessages = session.messages;
+    
+    conversationContext = [];
+    currentMessages.forEach(m => {
+      if (m.text && m.sender) {
+         const plainText = m.text.replace(/<[^>]*>/g, '');
+         conversationContext.push({ role: m.sender === 'user' ? 'user' : 'assistant', content: plainText });
+      }
+    });
+    if (conversationContext.length > MAX_CONTEXT_MESSAGES) conversationContext = conversationContext.slice(-MAX_CONTEXT_MESSAGES);
+
+    chat.innerHTML = '';
+    currentMessages.forEach(msg => appendMessageToDOM(msg, true));
+    toggleSidebar(false);
+    renderHistoryList();
+    cancelEdit();
+  }
+
+  function startNewChat() {
+    saveCurrentChat();
+    currentSessionId = Date.now().toString();
+    currentMessages = [];
+    conversationContext = [];
+    chat.innerHTML = '';
+    initApp();
+    toggleSidebar(false);
+    renderHistoryList();
+    cancelEdit();
+  }
+
+  function toggleSidebar(show) {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (show) { renderHistoryList(); sidebar.classList.add('show'); backdrop.classList.add('show'); }
+    else { sidebar.classList.remove('show'); backdrop.classList.remove('show'); }
+  }
+
+  // --- CÀI ĐẶT ---
+  function openSettings() { document.getElementById('settings-modal').classList.add('show'); document.getElementById('settings-main-view').classList.add('active'); document.getElementById('settings-data-view').classList.remove('active'); }
+  function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); }
+  function openDataControl() { document.getElementById('settings-main-view').classList.remove('active'); document.getElementById('settings-data-view').classList.add('active'); }
+  function closeDataControl() { document.getElementById('settings-data-view').classList.remove('active'); document.getElementById('settings-main-view').classList.add('active'); }
+  function toggleImproveModel() { document.getElementById('toggle-improve').classList.toggle('active'); }
+  function exportData() {
+    if (chatHistory.length === 0) return alert("Không có dữ liệu để xuất.");
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(chatHistory, null, 2));
+    const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", "scenter_ai_data.json"); document.body.appendChild(a); a.click(); a.remove();
+  }
+  function deleteAllChats() { if (confirm("Bạn có chắc chắn muốn xóa TẤT CẢ các cuộc trò chuyện?")) { localStorage.removeItem('scenter_chat_history'); chatHistory = []; startNewChat(); alert("Đã xóa toàn bộ lịch sử."); } }
+  function logoutApp() { if (confirm("Bạn có chắc chắn muốn đăng xuất và xóa toàn bộ dữ liệu cục bộ?")) { localStorage.clear(); location.reload(); } }
+
+  // --- CHẾ ĐỘ ---
+  function toggleThinkMode() { isThinkMode = !isThinkMode; document.getElementById('think-btn').classList.toggle('active', isThinkMode); }
+  function toggleSearchMode() { isSearchMode = !isSearchMode; document.getElementById('search-btn').classList.toggle('active', isSearchMode); }
+
+  // --- TIỆN ÍCH ---
+  function escapeHtml(text) {
+    return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  function parseMarkdownTables(text) {
+    const lines = text.split('\n');
+    let output = [], inTable = false, tableHtml = '';
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (line.startsWith('|') && line.endsWith('|') && line.length > 1) {
+            if (inTable) { tableHtml += '<tr>' + line.split('|').slice(1, -1).map(c => `<td>${c.trim()}</td>`).join('') + '</tr>'; }
+            else {
+                inTable = true; tableHtml = '<div class="table-container"><table><thead><tr>' + line.split('|').slice(1, -1).map(c => `<th>${c.trim()}</th>`).join('') + '</tr></thead><tbody>';
+                if (i + 1 < lines.length && /^\|[\s\-\:]+\|$/.test(lines[i+1].trim())) i++;
+            }
+        } else {
+            if (inTable) { inTable = false; tableHtml += '</tbody></table></div>'; output.push(tableHtml); }
+            output.push(lines[i]);
+        }
+    }
+    if (inTable) { tableHtml += '</tbody></table></div>'; output.push(tableHtml); }
+    return output.join('\n');
+  }
+
+  function formatAIReply(text) {
+    let safe = escapeHtml(text || "");
+    safe = parseMarkdownTables(safe);
+    safe = safe.replace(/(https?:\/\/[^\s<]+)/g, '<a class="link-button" href="$1" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:underline;">$1</a>');
+    safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;">$1</code>');
+    safe = safe.replace(/^#{1,4}\s+(.+)$/gm, '<span style="display:block;font-weight:700;margin:12px 0 6px;color:#fff;">$1</span>');
+    safe = safe.replace(/^\s*[-•]\s+(.+)$/gm, '<li>$1</li>');
+    safe = safe.replace(/(?:<li>.*<\/li>\n?)+/g, m => '<ul style="margin:7px 0 10px 20px;padding:0;">' + m + '</ul>');
+    safe = safe.replace(/\n{2,}/g, '</p><p style="margin:0 0 10px;">');
+    safe = safe.replace(/\n/g, '<br>');
+    safe = '<p style="margin:0;">' + safe + '</p>';
+    return safe;
+  }
+
+  function toggleInputIcons() {
+    const hasText = input.value.trim().length > 0;
+    const hasAttachment = currentAttachment !== null;
+    if (hasText || hasAttachment) { voiceBtn.style.display = 'none'; sendBtn.style.display = 'flex'; }
+    else { voiceBtn.style.display = 'flex'; sendBtn.style.display = 'none'; }
+  }
+
+  input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; toggleInputIcons(); });
+
+  // --- KHỞI TẠO ---
+  function initApp() {
+    initSpeechRecognition();
+    toggleInputIcons();
+    renderHistoryList();
+    isThinkMode = false; isSearchMode = false;
+    document.getElementById('think-btn').classList.remove('active');
+    document.getElementById('search-btn').classList.remove('active');
+    
+    const hour = new Date().getHours();
+    let greeting = "Xin chào, hãy bắt đầu trò chuyện nào";
+    if (hour >= 5 && hour < 11) greeting = "Chào buổi sáng! Hãy bắt đầu trò chuyện nào";
+    else if (hour >= 11 && hour < 14) greeting = "Chào buổi trưa! Hãy bắt đầu trò chuyện nào";
+    else if (hour >= 14 && hour < 18) greeting = "Chào buổi chiều! Hãy bắt đầu trò chuyện nào";
+    else greeting = "Chào buổi tối! Hãy bắt đầu trò chuyện nào";
+
+    chat.innerHTML = `<div class="welcome-container" id="welcome-screen"><img class="welcome-logo" src="https://i.supaimg.com/8bee83a3-33b4-4f31-b3b4-bbfb5776f2b3/a25af29c-9283-48a6-b893-9a0ce5449c6b.png" alt="SCenter AI"><h2 class="welcome-title">${greeting}</h2></div>`;
+  }
+
+  // --- API ---
+  async function callOpenRouter(message, attachment = null) {
+    let systemPrompt = "Bạn là SCenter AI, một trợ lý AI thông minh trả lời bằng TIẾNG VIỆT.\n- Trả lời đúng trọng tâm câu hỏi, không tự bịa thông tin.\n- Nếu người dùng hỏi 'SCenter AI do ai sáng lập', câu trả lời bắt buộc là: 'SCenter AI do Thaiisme phát triển.'\n- KHI NGƯỜI DÙNG YÊU CẦU SO SÁNH, BẮT BUỘC TRÌNH BÀY DƯỚI DẠNG BẢNG MARKDOWN.\n";
+    if (isThinkMode) systemPrompt += "- Hãy suy nghĩ từng bước một cách logic trước khi đưa ra câu trả lời cuối cùng.\n";
+    if (isSearchMode) systemPrompt += "- Hãy sử dụng dữ liệu tìm kiếm web để trả lời chính xác nhất.\n";
+
+    const messages = [{ role: "system", content: systemPrompt }];
+    if (Array.isArray(conversationContext)) {
+      conversationContext.slice(-MAX_CONTEXT_MESSAGES).forEach(item => messages.push({ role: item.role, content: item.content }));
+    }
+    let userContent = message;
+    if (attachment && attachment.kind === 'image' && attachment.dataUrl) {
+      userContent = [{ type: "text", text: message || "Hãy phân tích hình ảnh này." }, { type: "image_url", image_url: { url: attachment.dataUrl } }];
+    } else if (attachment && attachment.textContent) {
+      userContent = `[NỘI DUNG TỆP]:\n${attachment.textContent.slice(0, 15000)}\n\n[CÂU HỎI]:\n${message}`;
+    }
+    messages.push({ role: "user", content: userContent });
+
+    const payload = { model: OPENROUTER_MODEL, messages, temperature: 0.7, max_tokens: 2048 };
+    if (isSearchMode) payload.plugins = [{ id: "web" }];
+
+    // KIỂM TRA TOKEN TURNSTILE TRƯỚC KHI GỬI
+    if (!turnstileToken) {
+      throw new Error("Vui lòng hoàn tất xác minh robot trước khi gửi tin nhắn.");
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const onUserAbort = () => { clearTimeout(timeoutId); try { controller.abort(); } catch (_) {} };
+    if (currentAbortController) {
+      if (currentAbortController.signal.aborted) { clearTimeout(timeoutId); throw new Error("USER_STOPPED"); }
+      currentAbortController.signal.addEventListener('abort', onUserAbort, { once: true });
+    }
+
+    try {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payload: payload,
+          turnstileToken: turnstileToken
+        }), 
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      if (currentAbortController) currentAbortController.signal.removeEventListener('abort', onUserAbort);
+      
+      const data = await response.json();
+      
+      // Reset token sau khi dùng
+      turnstileToken = null;
+      if (typeof turnstile !== 'undefined') turnstile.reset();
+
+      if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+      const reply = data?.choices?.[0]?.message?.content;
+      if (!reply) throw new Error("Không nhận được câu trả lời.");
+      if (stopRequested) return null;
+
+      const userTextForContext = attachment ? (message || "[Đã gửi tệp/ảnh]") : message;
+      conversationContext.push({ role: "user", content: userTextForContext });
+      conversationContext.push({ role: "assistant", content: reply });
+      if (conversationContext.length > MAX_CONTEXT_MESSAGES) conversationContext = conversationContext.slice(-MAX_CONTEXT_MESSAGES);
+      return formatAIReply(reply);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (currentAbortController) currentAbortController.signal.removeEventListener('abort', onUserAbort);
+      if (stopRequested || (currentAbortController && currentAbortController.signal.aborted)) throw new Error("USER_STOPPED");
+      throw error;
+    }
+  }
+
+  async function generateSmartResponse(msg, attachment = null) {
+    try {
+      const founderQuestion = /(?:sc\s*enter\s*ai|scenter\s*ai).*?(?:sáng\s*lập|thành\s*lập|phát\s*triển|của\s*ai|ai\s*là|founder)|(?:ai\s*(?:sáng\s*lập|thành\s*lập|phát\s*triển).*?scenter\s*ai)/i.test(msg || "");
+      const reply = founderQuestion ? "SCenter AI do Thaiisme phát triển." : await callOpenRouter(msg, attachment);
+      if (stopRequested) return null;
+      if (founderQuestion) {
+          conversationContext.push({ role: "user", content: msg });
+          conversationContext.push({ role: "assistant", content: reply });
+          return formatAIReply(reply);
+      }
+      return reply;
+    } catch (error) {
+      if (error?.message === "USER_STOPPED" || stopRequested) return null;
+      let help = "SCenter AI chưa nhận được phản hồi. Hãy thử lại.";
+      const err = String(error?.message || "");
+      if (err.includes("401")) help = "Lỗi xác thực API Key.";
+      else if (err.includes("429")) help = "Hệ thống đang quá tải.";
+      else if (err.includes("Vui lòng hoàn tất")) help = err;
+      return `<div><strong>Chưa thể trả lời.</strong><br><br>${escapeHtml(help)}</div>`;
+    }
+  }
+
+  // --- XỬ LÝ ĐÍNH KÈM ---
+  function setPendingAttachment(file, dataUrl = null) {
+    currentFile = file || null;
+    currentAttachment = file ? { name: file.name, kind: file.type && file.type.startsWith('image/') ? 'image' : 'file', dataUrl: dataUrl, textContent: null } : null;
+    const box = document.getElementById('pending-attachment'), name = document.getElementById('pending-attachment-name');
+    const preview = document.getElementById('pending-attachment-preview'), icon = document.getElementById('pending-attachment-icon');
+    if (!file) { box.classList.remove('show'); preview.style.display = 'none'; preview.removeAttribute('src'); name.textContent = ''; toggleInputIcons(); return; }
+    name.textContent = file.name; box.classList.add('show');
+    if (file.type && file.type.startsWith('image/') && dataUrl) { preview.src = dataUrl; preview.style.display = 'block'; icon.style.display = 'none'; currentImage = dataUrl; }
+    else { preview.style.display = 'none'; preview.removeAttribute('src'); icon.style.display = 'grid'; currentImage = null; }
+    toggleInputIcons();
+  }
+
+  function clearPendingAttachment() { currentImage = null; currentFile = null; currentAttachment = null; setPendingAttachment(null); if (imageUpload) imageUpload.value = ''; if (fileUpload) fileUpload.value = ''; toggleInputIcons(); }
+
+  async function readTextFile(file) {
+    if (!file || !file.type) return null;
+    const textTypes = ['text/plain','text/csv','text/html','application/json','application/javascript','text/javascript','text/css','application/xml','text/xml'];
+    if (!textTypes.includes(file.type) && !/\.(txt|csv|json|html?|js|css|xml|md)$/i.test(file.name)) return null;
+    try { return await file.text(); } catch (_) { return null; }
+  }
+
+  // --- HIỂN THỊ TIN NHẮN ---
+  function appendMessageToDOM(msgObj, isFromHistory = false) {
+    if (!isFromHistory) {
+      currentMessages.push(msgObj);
+      saveCurrentChat();
+    }
+
+    const { id, text, sender, imageUrl, fileInfo, thinkingTime } = msgObj;
+    const message = document.createElement('div');
+    message.className = 'message ' + sender;
+    message.id = id;
+
+    if (sender === 'user') {
+        message.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showContextMenu(e.clientX, e.clientY, id, text);
+        });
+        let touchTimer;
+        message.addEventListener('touchstart', (e) => {
+            touchTimer = setTimeout(() => {
+                const touch = e.touches[0];
+                showContextMenu(touch.clientX, touch.clientY, id, text);
+            }, 600);
+        });
+        message.addEventListener('touchend', () => clearTimeout(touchTimer));
+        message.addEventListener('touchmove', () => clearTimeout(touchTimer));
+    }
+
+    if (sender === 'bot' && thinkingTime) {
+        const thinkDiv = document.createElement('div');
+        thinkDiv.className = 'thinking-block';
+        thinkDiv.innerHTML = `Đã suy nghĩ trong ${thinkingTime} giây <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>`;
+        message.appendChild(thinkDiv);
+    }
+
+    const content = document.createElement('div');
+    content.className = 'message-content';
+
+    if (imageUrl) {
+      const image = document.createElement('img');
+      image.src = imageUrl; image.className = 'image-preview'; image.alt = fileInfo?.name || 'Ảnh';
+      content.appendChild(image);
+    }
+
+    if (fileInfo && !imageUrl) {
+      const fileRow = document.createElement('div');
+      fileRow.style.cssText = 'display:flex;align-items:center;gap:9px;margin-bottom:8px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.07);';
+      fileRow.innerHTML = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;flex:0 0 20px"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(fileInfo.name || 'Tệp')}</span>`;
+      content.appendChild(fileRow);
+    }
+
+    if (sender === 'bot') {
+      content.innerHTML += String(text ?? '');
+    } else {
+      const textNode = document.createElement('div');
+      textNode.textContent = String(text ?? '');
+      content.appendChild(textNode);
+    }
+
+    message.appendChild(content);
+
+    if (sender === 'bot') {
+        const actionBar = document.createElement('div');
+        actionBar.className = 'bot-action-bar';
+        
+        const versionGroup = document.createElement('div');
+        versionGroup.className = 'action-group';
+        versionGroup.innerHTML = `
+            <button class="action-btn"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span>1/1</span>
+            <button class="action-btn"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+        `;
+
+        const utilityGroup = document.createElement('div');
+        utilityGroup.className = 'action-group';
+        
+        const btnCopy = document.createElement('button');
+        btnCopy.className = 'action-btn'; btnCopy.title = 'Sao chép';
+        btnCopy.innerHTML = `<svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg>`;
+        btnCopy.onclick = async () => {
+            await navigator.clipboard.writeText(content.innerText || content.textContent || '');
+            btnCopy.style.color = '#60a5fa';
+            setTimeout(() => btnCopy.style.color = '', 1000);
+        };
+
+        const btnLike = document.createElement('button');
+        btnLike.className = 'action-btn'; btnLike.title = 'Thích';
+        btnLike.innerHTML = `<svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>`;
+        btnLike.onclick = () => { btnLike.classList.toggle('active'); };
+
+        const btnDislike = document.createElement('button');
+        btnDislike.className = 'action-btn'; btnDislike.title = 'Không thích';
+        btnDislike.innerHTML = `<svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"></path></svg>`;
+        btnDislike.onclick = () => { btnDislike.classList.toggle('active'); };
+
+        const btnSpeak = document.createElement('button');
+        btnSpeak.className = 'action-btn'; btnSpeak.title = 'Đọc';
+        btnSpeak.innerHTML = `<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+        btnSpeak.onclick = () => {
+            const utterance = new SpeechSynthesisUtterance(content.innerText || content.textContent || '');
+            utterance.lang = 'vi-VN';
+            window.speechSynthesis.speak(utterance);
+        };
+
+        const btnShare = document.createElement('button');
+        btnShare.className = 'action-btn'; btnShare.title = 'Chia sẻ';
+        btnShare.innerHTML = `<svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>`;
+        btnShare.onclick = async () => {
+            if (navigator.share) {
+                await navigator.share({ text: content.innerText || content.textContent || '' });
+            } else {
+                await navigator.clipboard.writeText(content.innerText || content.textContent || '');
+                alert('Đã sao chép nội dung để chia sẻ.');
+            }
+        };
+
+        utilityGroup.appendChild(btnCopy);
+        utilityGroup.appendChild(btnLike);
+        utilityGroup.appendChild(btnDislike);
+        utilityGroup.appendChild(btnSpeak);
+        utilityGroup.appendChild(btnShare);
+
+        const btnRegen = document.createElement('button');
+        btnRegen.className = 'action-btn'; btnRegen.title = 'Tạo lại câu trả lời';
+        btnRegen.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/></svg>`;
+        btnRegen.onclick = () => regenerateMessage(id);
+
+        actionBar.appendChild(versionGroup);
+        actionBar.appendChild(utilityGroup);
+        actionBar.appendChild(btnRegen);
+        message.appendChild(actionBar);
+    }
+
+    if (sender === 'user') {
+        const userActionBar = document.createElement('div');
+        userActionBar.className = 'bot-action-bar user-action-bar';
+
+        const btnCopy = document.createElement('button');
+        btnCopy.className = 'action-btn'; btnCopy.title = 'Sao chép';
+        btnCopy.innerHTML = `<svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg>`;
+        btnCopy.onclick = async () => {
+            await navigator.clipboard.writeText(text || '');
+            btnCopy.style.color = '#60a5fa';
+            setTimeout(() => btnCopy.style.color = '', 1000);
+        };
+
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'action-btn'; btnEdit.title = 'Chỉnh sửa';
+        btnEdit.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+        btnEdit.onclick = () => editMessage(id, text);
+
+        userActionBar.appendChild(btnCopy);
+        userActionBar.appendChild(btnEdit);
+        message.appendChild(userActionBar);
+    }
+
+    chat.appendChild(message);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // --- XỬ LÝ MENU NGỮ CẢNH ---
+  let activeCtxMessageId = null;
+  let activeCtxText = null;
+
+  function showContextMenu(x, y, msgId, text) {
+    activeCtxMessageId = msgId;
+    activeCtxText = text;
+    
+    ctxMenu.style.display = 'flex';
+    ctxMenu.classList.add('show');
+    
+    const menuWidth = 180;
+    const menuHeight = 180;
+    if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+    if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+    ctxMenu.style.left = x + 'px';
+    ctxMenu.style.top = y + 'px';
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!ctxMenu.contains(e.target)) ctxMenu.classList.remove('show');
+  });
+  document.addEventListener('touchstart', (e) => {
+    if (!ctxMenu.contains(e.target)) ctxMenu.classList.remove('show');
+  }, {passive: true});
+  chat.addEventListener('scroll', () => ctxMenu.classList.remove('show'));
+  window.addEventListener('resize', () => ctxMenu.classList.remove('show'));
+
+  document.getElementById('ctx-copy').onclick = async () => {
+    if (activeCtxText) {
+        await navigator.clipboard.writeText(activeCtxText);
+        ctxMenu.classList.remove('show');
+    }
+  };
+
+  document.getElementById('ctx-select').onclick = () => {
+    if (activeCtxMessageId) {
+        const el = document.getElementById(activeCtxMessageId).querySelector('.message-content');
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ctxMenu.classList.remove('show');
+    }
+  };
+
+  document.getElementById('ctx-edit').onclick = () => {
+    if (activeCtxMessageId && activeCtxText) {
+        editMessage(activeCtxMessageId, activeCtxText);
+        ctxMenu.classList.remove('show');
+    }
+  };
+
+  document.getElementById('ctx-share').onclick = async () => {
+    if (activeCtxText) {
+        if (navigator.share) {
+            try { await navigator.share({ text: activeCtxText }); } catch (_) {}
+        } else {
+            await navigator.clipboard.writeText(activeCtxText);
+            alert('Đã sao chép nội dung để chia sẻ.');
+        }
+        ctxMenu.classList.remove('show');
+    }
+  };
+
+  // --- CHỈNH SỬA TIN NHẮN ---
+  function editMessage(msgId, text) {
+    editingMessageId = msgId;
+    
+    document.querySelectorAll('.message').forEach(el => el.classList.remove('editing'));
+    const msgEl = document.getElementById(msgId);
+    if (msgEl) msgEl.classList.add('editing');
+    
+    chat.classList.add('edit-mode');
+    document.getElementById('edit-header').classList.remove('hidden');
+    
+    input.value = text;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    toggleInputIcons();
+    input.focus();
+  }
+
+  function cancelEdit() {
+    editingMessageId = null;
+    document.querySelectorAll('.message').forEach(el => el.classList.remove('editing'));
+    chat.classList.remove('edit-mode');
+    document.getElementById('edit-header').classList.add('hidden');
+    input.value = '';
+    input.style.height = 'auto';
+    toggleInputIcons();
+  }
+
+  // --- TẠO LẠI CÂU TRẢ LỜI ---
+  function regenerateMessage(botMsgId) {
+    const index = currentMessages.findIndex(m => m.id === botMsgId);
+    if (index === -1 || index === 0) return;
+
+    const userMsgObj = currentMessages[index - 1];
+    
+    currentMessages.splice(index, 1);
+    const el = document.getElementById(botMsgId);
+    if (el) el.remove();
+
+    input.value = userMsgObj.text || (userMsgObj.fileInfo ? "Hãy phân tích lại tệp/ảnh này." : "");
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+    toggleInputIcons();
+    
+    currentMessages.pop(); 
+    
+    sendMessage();
+  }
+
+  // --- TYPING INDICATOR ---
+  function showTypingIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'message bot';
+    indicator.id = 'typing-indicator';
+    let text = "Đang phân tích";
+    if (isThinkMode && isSearchMode) text = "Đang tìm kiếm & suy nghĩ";
+    else if (isThinkMode) text = "Đang suy nghĩ";
+    else if (isSearchMode) text = "Đang tìm kiếm";
+    indicator.innerHTML = `<div class="typing-indicator">${text} <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+    chat.appendChild(indicator);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function removeTypingIndicator() { const el = document.getElementById('typing-indicator'); if (el) el.remove(); }
+
+  // --- GỬI TIN NHẮN ---
+  function setSendingState(sending) {
+    isSending = sending;
+    if (sending) { stopBtn.classList.add('show'); voiceBtn.style.display = 'none'; sendBtn.style.display = 'none'; }
+    else { stopBtn.classList.remove('show'); toggleInputIcons(); }
+  }
+
+  function stopGeneration() {
+    if (!isSending) return;
+    stopRequested = true;
+    if (currentAbortController) try { currentAbortController.abort(); } catch (_) {}
+    removeTypingIndicator();
+    setSendingState(false);
+  }
+
+  async function sendMessage() {
+    if (isSending) return;
+    const message = input.value.trim();
+    const attachment = currentAttachment ? {...currentAttachment} : null;
+    const hasAttachment = !!attachment;
+    if (!message && !hasAttachment) return;
+
+    if (!checkDailyLimit()) return;
+
+    if (editingMessageId) {
+        const index = currentMessages.findIndex(m => m.id === editingMessageId);
+        if (index !== -1) {
+            const removedMsgs = currentMessages.splice(index);
+            removedMsgs.forEach(m => {
+                const el = document.getElementById(m.id);
+                if (el) el.remove();
+            });
+
+            conversationContext = [];
+            currentMessages.forEach(m => {
+                if (m.text && m.sender) {
+                    const plainText = m.text.replace(/<[^>]*>/g, '');
+                    conversationContext.push({ role: m.sender === 'user' ? 'user' : 'assistant', content: plainText });
+                }
+            });
+            if (conversationContext.length > MAX_CONTEXT_MESSAGES) conversationContext = conversationContext.slice(-MAX_CONTEXT_MESSAGES);
+        }
+        cancelEdit();
+    }
+
+    stopRequested = false;
+    currentAbortController = new AbortController();
+    setSendingState(true);
+
+    const welcomeScreen = document.getElementById('welcome-screen');
+    if (welcomeScreen) chat.innerHTML = '';
+
+    const fileInfo = attachment ? { name: attachment.name, kind: attachment.kind } : null;
+    
+    const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    
+    appendMessageToDOM({
+        id: msgId,
+        text: message || (attachment.kind === 'image' ? 'Hãy xem ảnh này.' : 'Hãy xem tệp này.'),
+        sender: 'user',
+        imageUrl: attachment?.kind === 'image' ? attachment.dataUrl : null,
+        fileInfo: fileInfo
+    }, false);
+
+    input.value = ''; input.style.height = 'auto';
+    clearPendingAttachment();
+    showTypingIndicator();
+
+    const startTime = Date.now();
+
+    try {
+      const reply = await generateSmartResponse(message, attachment);
+      removeTypingIndicator();
+      if (reply !== null && !stopRequested) {
+        const thinkingTime = Math.floor((Date.now() - startTime) / 1000);
+        appendMessageToDOM({
+            id: 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+            text: reply,
+            sender: 'bot',
+            thinkingTime: isThinkMode ? thinkingTime : null
+        }, false);
+      }
+    } catch (error) {
+      removeTypingIndicator();
+      if (!stopRequested && error?.message !== "USER_STOPPED") {
+        appendMessageToDOM({ id: 'err-' + Date.now(), text: 'Xin lỗi, đã xảy ra lỗi. Vui lòng thử lại.', sender: 'bot' }, false);
+      }
+    } finally {
+      setSendingState(false);
+      currentAbortController = null;
+      stopRequested = false;
+    }
+  }
+
+  // --- MICRO ---
+  function initSpeechRecognition() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false; recognition.interimResults = false; recognition.lang = 'vi-VN'; 
+      recognition.onstart = function() { voiceBtn.classList.add('recording'); isRecording = true; };
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        input.value = transcript; input.style.height = input.scrollHeight + 'px';
+        toggleInputIcons(); voiceBtn.classList.remove('recording'); isRecording = false;
+        if (transcript.trim()) setTimeout(() => sendMessage(), 500); 
+      };
+      recognition.onend = function() { voiceBtn.classList.remove('recording'); isRecording = false; };
+      recognition.onerror = function(event) { voiceBtn.classList.remove('recording'); isRecording = false; };
+    } else { voiceBtn.style.display = 'none'; }
+  }
+
+  voiceBtn.addEventListener('click', () => {
+    if (!recognition) return alert("Trình duyệt không hỗ trợ micro.");
+    if (isRecording) recognition.stop(); else try { recognition.start(); } catch (e) {}
+  });
+
+  // --- UPLOAD ---
+  function toggleChatMenu() { document.getElementById('chat-menu').classList.toggle('hidden'); }
+  function menuAction(action) {
+    toggleChatMenu();
+    if (action === 'image') imageUpload.click();
+    else if (action === 'camera') {
+      const ci = document.createElement('input');
+      ci.type = 'file'; ci.accept = 'image/*'; ci.capture = 'environment';
+      ci.onchange = (e) => {
+        if (e.target.files[0]) {
+          const reader = new FileReader();
+          reader.onload = (ev) => setPendingAttachment(e.target.files[0], ev.target.result);
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      };
+      ci.click();
+    }
+    else if (action === 'file') fileUpload.click();
+  }
+
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('chat-menu');
+    if (menu && !menu.classList.contains('hidden') && !e.target.closest('#upload-btn') && !menu.contains(e.target)) menu.classList.add('hidden');
+  });
+
+  imageUpload.addEventListener('change', function(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setPendingAttachment(file, ev.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  fileUpload.addEventListener('change', async function(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const textContent = await readTextFile(file);
+    setPendingAttachment(file, null);
+    if (currentAttachment) currentAttachment.textContent = textContent;
+  });
+
+  document.getElementById('pending-attachment-remove').addEventListener('click', clearPendingAttachment);
+
+  // --- XEM ẢNH ---
+  const imgPreview = document.getElementById('pending-attachment-preview');
+  const imgModal = document.getElementById('image-preview-modal');
+  const imgLarge = document.getElementById('image-preview-large');
+  const closePreview = imgModal.querySelector('.close-preview');
+  imgPreview.addEventListener('click', () => { if (imgPreview.src) { imgLarge.src = imgPreview.src; imgModal.classList.add('show'); } });
+  const hideModal = () => { imgModal.classList.remove('show'); imgLarge.removeAttribute('src'); };
+  closePreview.addEventListener('click', hideModal);
+  imgModal.addEventListener('click', (e) => { if (e.target === imgModal) hideModal(); });
+
+  // --- KHỞI CHẠY ---
+  initApp();
+</script>
+</body>
+</html>
