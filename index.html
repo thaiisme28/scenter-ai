@@ -712,10 +712,11 @@ textarea::placeholder { color: #888; }
 
 <script>
   // ============================================================
-  // --- CẤU HÌNH WORKER (ĐÃ SỬA LẠI ĐÚNG ĐƯỜNG DẪN) ---
+  // --- CẤU HÌNH WORKER ---
   // ============================================================
   const OPENROUTER_API_URL = "https://scenter-proxy.scenter-ai-proxy.workers.dev";
-  const OPENROUTER_MODEL = "openai/gpt-4o";
+  // ĐÃ ĐỔI SANG MODEL MIỄN PHÍ ĐỂ TRÁNH LỖI HẾT QUOTA
+  const OPENROUTER_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
   const MAX_CONTEXT_MESSAGES = 6;
 
   // --- CẤU HÌNH TURNSTILE ---
