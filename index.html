@@ -716,7 +716,7 @@ textarea::placeholder { color: #888; }
   // ============================================================
   const OPENROUTER_API_URL = "https://scenter-proxy.scenter-ai-proxy.workers.dev";
   // ĐÃ ĐỔI SANG MODEL MIỄN PHÍ MỚI (HOẠT ĐỘNG TỐT)
-  const OPENROUTER_MODEL = "google/gemini-2.0-flash-lite-preview-02-05:free";
+  const OPENROUTER_MODEL = "qwen/qwen-2.5-72b-instruct:free";
   const MAX_CONTEXT_MESSAGES = 6;
 
   // --- CẤU HÌNH TURNSTILE ---
@@ -1007,7 +1007,14 @@ textarea::placeholder { color: #888; }
       turnstileToken = null;
       if (typeof turnstile !== 'undefined') turnstile.reset();
 
-      if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        if (data && data.error) {
+          errorMessage = typeof data.error === 'string' ? data.error : (data.error.message || JSON.stringify(data.error));
+        }
+        throw new Error(errorMessage);
+      }
+      
       const reply = data?.choices?.[0]?.message?.content;
       if (!reply) throw new Error("Không nhận được câu trả lời.");
       if (stopRequested) return null;
@@ -1038,12 +1045,8 @@ textarea::placeholder { color: #888; }
       return reply;
     } catch (error) {
       if (error?.message === "USER_STOPPED" || stopRequested) return null;
-      let help = "SCenter AI chưa nhận được phản hồi. Hãy thử lại.";
-      const err = String(error?.message || "");
-      if (err.includes("401")) help = "Lỗi xác thực API Key.";
-      else if (err.includes("429")) help = "Hệ thống đang quá tải.";
-      else if (err.includes("Vui lòng hoàn tất")) help = err;
-      return `<div><strong>Chưa thể trả lời.</strong><br><br>${escapeHtml(help)}</div>`;
+      let help = `Mã lỗi: ${escapeHtml(error.message)}`;
+      return `<div><strong>Chưa thể trả lời.</strong><br><br>${help}</div>`;
     }
   }
 
